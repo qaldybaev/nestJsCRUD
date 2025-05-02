@@ -21,5 +21,7 @@ export interface IParamId {
 export interface ICategoryResponse {
     message: string;
     count?: number;
+    limit?:number
+    page?:number
     data: ICreateCategory[]
 }

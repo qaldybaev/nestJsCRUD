@@ -1,28 +1,30 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from "@nestjs/common";
 import { ProductService } from "./product.service";
-import { IParamId, IProductCreate, IProductUpdate } from "./interface";
+import { GetAllProductDto, ProductCreateDto, UpdateProductDto } from "./dtos";
+
+
 
 @Controller("products")
 export class ProductController {
     constructor(private readonly productService: ProductService) { }
 
     @Get()
-    async getAllProduct() {
-        return this.productService.getAllProduct()
+    async getAllProduct(@Query() query:GetAllProductDto) {
+        return this.productService.getAllProduct(query)
     }
 
     @Post()
-    async createProduct(@Body() body: IProductCreate) {
+    async createProduct(@Body() body: ProductCreateDto) {
         return this.productService.createProduct(body)
     }
     @Patch(':id')
-    async updateProduct(@Param() params: IParamId, @Body() body: IProductUpdate) {
+    async updateProduct(@Param('id',ParseIntPipe) id:number, @Body() body: UpdateProductDto) {
 
-        return this.productService.updateProduct(+params.id, body)
+        return this.productService.updateProduct(id, body)
     }
     @Delete(':id')
-    async deleteProduct(@Param() params: IParamId) {
+    async deleteProduct(@Param('id',ParseIntPipe) id:number) {
 
-        return this.productService.deleteProduct(+params.id)
+        return this.productService.deleteProduct(id)
     }
 }

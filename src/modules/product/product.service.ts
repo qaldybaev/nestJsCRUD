@@ -2,22 +2,29 @@ import { Injectable, NotFoundException, OnModuleInit } from "@nestjs/common";
 import { PostgresService } from "src/database";
 import { ProductTableModel } from "./model";
 import { IGetAllProductsResponse, IProductCreate, IProductUpdate } from "./interface";
+import { GetAllProductDto } from "./dtos";
 
 @Injectable()
 export class ProductService implements OnModuleInit {
-    constructor(private readonly pg: PostgresService) { }
+  constructor(private readonly pg: PostgresService) { }
 
-    async onModuleInit() {
-        try {
-            await this.pg.query(ProductTableModel)
-            console.log("Product table yaratildi✅")
-        } catch (error) {
-            console.log("Product table yaratishda xatolik❌")
-        }
+  async onModuleInit() {
+    try {
+      await this.pg.query(ProductTableModel)
+      console.log("Product table yaratildi✅")
+    } catch (error) {
+      console.log("Product table yaratishda xatolik❌")
     }
+  }
 
-    async getAllProduct():Promise<IGetAllProductsResponse> {
-        const products = await this.pg.query(`SELECT 
+  async getAllProduct(query: GetAllProductDto): Promise<IGetAllProductsResponse> {
+    const page = Number(query.page || 1);
+    const limit = Number(query.limit || 10);
+    const offset = (page - 1) * limit;
+    const sortBy = query.sortBy || 'category_id';
+    const order = query.order?.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
+    const products = await this.pg.query(`SELECT 
             c.id AS category_id,
             c.name AS category_name,
             json_agg(
@@ -29,59 +36,60 @@ export class ProductService implements OnModuleInit {
             ) AS products
         FROM categories c
         LEFT JOIN products p ON p.category_id = c.id
-        GROUP BY c.id, c.name ORDER BY category_id asc
-        
-        `)
+        GROUP BY c.id, c.name 
+        ORDER BY ${sortBy} ${order} LIMIT $1 OFFSET $2`, [limit, offset]);
 
-        return {
-            message: "success",
-            count: products.length,
-            data: products
-        }
+    return {
+      message: "success",
+      limit,
+      page,
+      count: products.length,
+      data: products
     }
-    async createProduct(payload:IProductCreate) {
-        const product = await this.pg.query(`INSERT INTO products(name,price,category_id) VALUES
+  }
+  async createProduct(payload: IProductCreate) {
+    const product = await this.pg.query(`INSERT INTO products(name,price,category_id) VALUES
         ($1,$2,$3) RETURNING *`, [payload.name, payload.price, payload.category_id])
 
-        return {
-            message: "success",
-            data: product
-        }
+    return {
+      message: "success",
+      data: product
     }
-    async updateProduct(id: number, payload:IProductUpdate) {
-        const found = await this.pg.query('SELECT * FROM products WHERE id = $1', [id]);
-        if (!found.length) {
-          throw new NotFoundException('Product not found!');
-        }
-      
-        const product = await this.pg.query(
-          `UPDATE products
+  }
+  async updateProduct(id: number, payload: IProductUpdate) {
+    const found = await this.pg.query('SELECT * FROM products WHERE id = $1', [id]);
+    if (!found.length) {
+      throw new NotFoundException('Product not found!');
+    }
+
+    const product = await this.pg.query(
+      `UPDATE products
            SET 
              name = COALESCE($1, name),
              price = COALESCE($2, price),
              category_id = COALESCE($3, category_id)
            WHERE id = $4 RETURNING *`,
-          [payload.name, payload.price, payload.category_id, id]
-        );
-      
-        return {
-          message: "success",
-          data: product,
-        };
-      }
-      async deleteProduct(id: number) {
-        const found = await this.pg.query('SELECT * FROM products WHERE id = $1', [id]);
-        if (!found.length) {
-          throw new NotFoundException('Product not found!');
-        }
-      
-        const product = await this.pg.query('DELETE FROM products WHERE id = $1 RETURNING *', [id]);
-      
-        return {
-          message: "success",
-          data: product,
-        };
-      }
-      
+      [payload.name, payload.price, payload.category_id, id]
+    );
+
+    return {
+      message: "success",
+      data: product,
+    };
+  }
+  async deleteProduct(id: number) {
+    const found = await this.pg.query('SELECT * FROM products WHERE id = $1', [id]);
+    if (!found.length) {
+      throw new NotFoundException('Product not found!');
+    }
+
+    const product = await this.pg.query('DELETE FROM products WHERE id = $1 RETURNING *', [id]);
+
+    return {
+      message: "success",
+      data: product,
+    };
+  }
+
 
 }

@@ -22,6 +22,8 @@ export interface IParamId {
 
 export interface IGetAllProductsResponse {
   message: string;
+  limit?:number
+  page?:number
   count: number;
   data: Array<{
     category_id: number;
