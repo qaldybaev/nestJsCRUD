@@ -9,4 +9,5 @@ export class UpdateCategoryDto {
     @IsPositive()
     @IsInt()
     category_id?: number;
+
 }
