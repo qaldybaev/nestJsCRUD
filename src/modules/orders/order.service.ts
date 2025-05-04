@@ -24,6 +24,7 @@ export class OrderService implements OnModuleInit {
               JSON_BUILD_OBJECT(
                 'product_id', products.id,
                 'product_name', products.name,
+                'product_images',products.images,
                 'orders', JSON_BUILD_OBJECT(
                     'order_id', orders.id,
                     'count', orders.count

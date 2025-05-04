@@ -23,10 +23,16 @@ export class FsHelper {
     }
 
     async deleteFile(filePath: string) {
-        const absolutePath = path.join(process.cwd(), filePath);
-
-        if (fs.existsSync(absolutePath)) {
-            await fsPromise.unlink(absolutePath);
+        const absolutePath = path.join(process.cwd(), filePath);   
+        try {
+            if (fs.existsSync(absolutePath)) {
+                await fsPromise.unlink(absolutePath);
+            } else {
+                console.log(`File not found: ${absolutePath}`);
+            }
+        } catch (error) {
+            console.error(`Error deleting file at ${absolutePath}:`, error);
         }
     }
+    
 }
